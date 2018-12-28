@@ -75,6 +75,10 @@
       <Project>{D26C8D93-C51B-4F61-ADA8-8527A18E4C41}</Project>
       <Name>Kesco.Lib.BaseExtention</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Kesco.Lib.Convert\Kesco.Lib.ConvertExtention.csproj">
+      <Project>{9C6AB086-FDB5-4FBC-B358-092C47F6B4F4}</Project>
+      <Name>Kesco.Lib.ConvertExtention</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Kesco.Lib.DALC\Kesco.Lib.DALC.csproj">
       <Project>{5F647577-BC44-41DE-AFBE-BC47C91548F1}</Project>
       <Name>Kesco.Lib.DALC</Name>

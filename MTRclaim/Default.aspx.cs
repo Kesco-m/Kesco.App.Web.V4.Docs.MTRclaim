@@ -219,9 +219,9 @@ namespace Kesco.App.Web.Docs.MTRclaim
         /// </summary>
         protected override void SetControlProperties()
         {
-            Company.IsRequired = Mtr.Organization.IsMandatory;
-            Subdivision.IsRequired = Mtr.Subdivision.IsMandatory;
-            PerformerOfSubdivision.IsRequired = Mtr.PerformerOfSubdivision.IsMandatory;
+            Company.IsRequired = Mtr.Organization.IsRequired;
+            Subdivision.IsRequired = Mtr.Subdivision.IsRequired;
+            PerformerOfSubdivision.IsRequired = Mtr.PerformerOfSubdivision.IsRequired;
 
             DBSDocBasis.Filter.Type.DocTypeParams.AddRange(GetControlTypeFilter(Mtr.Basis.DocFieldId));
             DBSDocBasis.ConfirmRemoveMsg = Resx.GetString("msgOsnAttention7");
@@ -1593,7 +1593,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
 
                 var colDocs = Mtr.PositionDocLinks.Where(m => m.LinkType == MtrChildType.ДокументТТН)
                                   .Select(m => m.DocId.ToString());
-                var docs = Collection2Str(colDocs);
+                var docs = Kesco.Lib.ConvertExtention.Convert.Collection2Str(colDocs);
 
                 if (!string.IsNullOrEmpty(docs))
                 {
@@ -1670,6 +1670,8 @@ namespace Kesco.App.Web.Docs.MTRclaim
         /// </summary>
         public void AktIssued(TextWriter w)
         {
+            if (Mtr.IsNew || string.IsNullOrEmpty(Mtr.Id)) return;
+
             var query = string.Format(@"SELECT движения.КодДокумента, движения.РесурсРус, движения.Количество,
 (SELECT TOP 1 ЕдиницаРус FROM Справочники.dbo.ЕдиницыИзмерения AS ед WHERE ед.КодЕдиницыИзмерения = Движения.КодЕдиницыИзмерения) ЕдиницаИзмерения
  FROM vwСвязиДокументов связи 
