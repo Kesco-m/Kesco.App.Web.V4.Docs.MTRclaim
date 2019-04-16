@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Kesco.App.Web.Docs.MTRclaim.Default"%>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Kesco.App.Web.Docs.MTRСlaim.Default"%>
 <%@ Register TagPrefix="cc" Namespace="Kesco.Lib.Web.DBSelect.V4" Assembly="DBSelect.V4" %>
 <%@ Register TagPrefix="cc1" Namespace="Kesco.Lib.Web.Controls.V4" Assembly="Controls.V4" %>
 

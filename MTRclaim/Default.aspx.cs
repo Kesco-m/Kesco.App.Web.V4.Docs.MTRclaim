@@ -16,20 +16,15 @@ using Kesco.Lib.Log;
 using Kesco.Lib.Web.Controls.V4;
 using Kesco.Lib.Web.Controls.V4.Common.DocumentPage;
 using Kesco.Lib.Web.Settings;
+using Convert = Kesco.Lib.ConvertExtention.Convert;
 
-namespace Kesco.App.Web.Docs.MTRclaim
+namespace Kesco.App.Web.Docs.MTRСlaim
 {
     /// <summary>
-    ///  Основная страница
+    ///     Основная страница
     /// </summary>
     public partial class Default : DocPage
     {
-        /// <summary>
-        ///  Текущий типизированный документ
-        /// </summary>
-        public MTRClaim Mtr { get { return (MTRClaim)Doc; } }
-
-
         private static string lblPosCol2;
         private static string lblUnitShort;
         private static string lblPosCol10;
@@ -37,249 +32,68 @@ namespace Kesco.App.Web.Docs.MTRclaim
         private static string lblAddition;
         private static string lblEdit;
         private static string cmdCopy;
-        
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string ppBtnCancel;
-        
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblMtrName;
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblSpecifications;
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblPurposeOfAcquisition;
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblPurchasesTerm;
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblUnit;
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblQuantity;
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblNote;
+
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblRemoval;
 
+        /// <summary>
+        ///     Ссылка на строку ресурсоного файла
+        /// </summary>
         protected static string lblPartialPay;
 
-        
-        #region Override
+        /// <summary>
+        ///     Документы основание оплаты - счет, договор, приложение к договору
+        /// </summary>
+        private List<MtrChildDoc> payDocsSchetDogovor;
 
         /// <summary>
-        /// Обработчик события загрузки страницы
+        ///     Текущий типизированный документ
         /// </summary>
-        /// <param name="sender">Страница</param>
-        /// <param name="e">Параметры</param>
-        protected void Page_Load(object sender, EventArgs e)
+        public MTRClaim Mtr
         {
-            if (!V4IsPostBack)
-            {
-                Company.Focus();
-
-                Subdivision.Filter.PcId.CompanyHowSearch = "0";
-
-                if (!CurrentPerson.IsNullEmptyOrZero())
-                {
-                    Subdivision.Filter.PcId.Value = Company.Value = CurrentPerson;
-                    DBSDocBasis.Filter.PersonIDs.Value = CurrentPerson;
-
-                    var personId = CurrentPerson.ToInt();
-                    Mtr.Organization.Value =  personId;
-
-                    if (CurrentUser.OrganizationId == personId)
-                    {
-                        Mtr.Subdivision.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
-                        PerformerOfSubdivision.Value = CurrentUser.Id;
-                        Mtr.PerformerOfSubdivision.Value = CurrentUser.EmployeeId;
-
-                        SetHeadDivisionText();
-                    }
-                }
-                else if (Doc.IsNew && CurrentUser.OrganizationId != null)
-                {
-                    Subdivision.Filter.PcId.Value = Company.Value = CurrentUser.OrganizationId.ToString();
-                    DBSDocBasis.Filter.PersonIDs.Value = CurrentUser.OrganizationId.ToString();
-                    Mtr.Organization.Value = CurrentUser.OrganizationId;
-                    Mtr.Subdivision.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
-                    PerformerOfSubdivision.Value = CurrentUser.Id;
-                    Mtr.PerformerOfSubdivision.Value = CurrentUser.EmployeeId;
-
-                    SetHeadDivisionText();
-                }
-
-               
-
-                lblQuantity = Resx.GetString("lblQuantity");
-                lblMtrName = Resx.GetString("lblMtrName");
-                lblSpecifications = Resx.GetString("lblSpecifications");
-                lblPurposeOfAcquisition = Resx.GetString("lblPurposeOfAcquisition");
-                lblPurchasesTerm = Resx.GetString("lblPurchasesTerm");
-                lblUnit = Resx.GetString("lblUnit");
-                lblNote = Resx.GetString("lblNotes");
-
-                lblPosCol2 = Resx.GetString("lblPosCol2");
-                lblUnitShort = Resx.GetString("lblUnitShort");
-                lblPosCol10 = Resx.GetString("lblPosCol10");
-                MsgDocs = Resx.GetString("msgDocs");
-                Resx.GetString("listFollowType");
-                Resx.GetString("lblPayment");
-                Resx.GetString("ppFltOsn");
-                Resx.GetString("lblCargowaybills");
-                lblAddition = Resx.GetString("lblAddition");
-                lblEdit = Resx.GetString("lblEdit");
-                lblRemoval = Resx.GetString("lblRemoval");
-                cmdCopy = Resx.GetString("cmdCopy");
-
-                btnCancel.Text = btnDelCancel.Text = Resx.GetString("ppBtnCancel");
-                btnAction.Text = Resx.GetString("cmdSave");
-                btnDelete.Text = Resx.GetString("btnDelete");
-
-                lblPartialPay = Resx.GetString("lblPartialPay");
-            }
-        }
-
-        /// <summary>
-        /// Обработка клиентских команд
-        /// </summary>
-        protected override void ProcessCommand(string cmd, NameValueCollection param)
-        {
-            var order = param["mtrPos"].ToInt();
-            switch (cmd)
-            {
-                case "AddEditDialog":
-                    if (order > 0)
-                        ShowEditDialog(order);
-                    else
-                        ShowAddDialog();
-                    break;
-                case "CopyDialog":
-                    ShowCopyDialog(order);
-                    break;
-                case "DeleteDialog":
-                    ShowDeleteDialog(order);
-                    break;
-                case "AddEditPosition":
-                    if (order > 0)
-                        EditPosition(order);
-                    else
-                        AddPosition();
-                    break;
-                case "DeletePosition":
-                    DeletePosition(order);
-                    break;
-                case "UpPosition":
-                    UpperPosition(order);
-                    break;
-                case "DownPosition":
-                    DownPosition(order);
-                    break;
-                case "LinkDroped":
-                    var docId = param["DropDocId"].ToInt();
-                    DocDropedAction(order, docId);
-                    break;
-                case "DocLinked":
-                    var ldocId = param["DropDocId"].ToInt();
-                    DocLinkedAction(ldocId);
-                    break;
-                case "RemoveLinkDoc":
-                    var lnkDocId = param["LnkDocId"].ToInt();
-                    var ask = param["ask"].ToBool();
-                    LinkedDocDelete(order, lnkDocId, ask);
-                    break;
-                case "LinkWithMtr":
-                    var mtrLnkDocId = param["MtrLnkDocId"].ToInt();
-                    ConfirmDocToLinkWithMtr(false, mtrLnkDocId);
-                    break;
-
-                case "PartialPay":
-                    int numValue = param["numVal"].ToInt();
-                    int partDropDocId = param["DropDocId"].ToInt();
-                    PartialPayChanged(numValue, partDropDocId);
-                    break;
-
-                // еще один post нужен для совместной работы(comet)
-                case "RefreshPositions":
-                    RefreshPositions();
-                    break;
-
-                default:
-                    base.ProcessCommand(cmd, param);
-                    break;
-            }
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Инициализация конкретного документа
-        /// </summary>
-        /// <param name="copy">Параметр указывается если копируем документ</param>
-        protected override void DocumentInitialization(Document copy = null)
-        {
-            if (copy == null)
-                Doc = new MTRClaim();
-            else
-                Doc = (MTRClaim)copy;
-
-            Doc.Date = DateTime.Today;
-            ShowDocDate = false;
-        }
-
-        /// <summary>
-        ///  Установить параметры контролов: параметры, дефолтные значения и т.д.
-        /// </summary>
-        protected override void SetControlProperties()
-        {
-            Company.IsRequired = Mtr.Organization.IsRequired;
-            Subdivision.IsRequired = Mtr.Subdivision.IsRequired;
-            PerformerOfSubdivision.IsRequired = Mtr.PerformerOfSubdivision.IsRequired;
-
-            DBSDocBasis.Filter.Type.DocTypeParams.AddRange(GetControlTypeFilter(Mtr.Basis.DocFieldId));
-            DBSDocBasis.ConfirmRemoveMsg = Resx.GetString("msgOsnAttention7");
-
-            // счета
-            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam { DocTypeID = ((int)DocTypeEnum.Счет).ToString(), QueryType = DocTypeQueryType.Equals});
-            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam { DocTypeID = ((int)DocTypeEnum.ИнвойсПроформа).ToString(), QueryType = DocTypeQueryType.Equals });
-
-            // договора
-            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam { DocTypeID = ((int)DocTypeEnum.Договор).ToString(), QueryType = DocTypeQueryType.WithChildren });
-
-            // приложения
-            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam { DocTypeID = ((int)DocTypeEnum.Приложение).ToString(), QueryType = DocTypeQueryType.WithChildren });
-
-            if (!Mtr.IsNew)
-            {
-                DBSDocToLink.Filter.Date.Value = Mtr.Date.ToSqlDate();
-                DBSDocToLink.Filter.Date.DateSearchType = DateSearchType.MoreThan;
-            }
-
-            SetHeadDivisionText();
-
-            if(IsInDocView)
-                DocumentReadOnly = true;
-            else if(!DocEditable)
-                DocumentReadOnly = true;
-        }
-
-        protected override void LoadData(string id)
-        {
-            base.LoadData(id);
-
-            if (!id.IsNullEmptyOrZero())
-            {
-                Mtr.ReloadPositions();
-                Mtr.BasisDocLinks = DocLink.LoadBasisDocsByChildId(Doc.DocId);
-                Mtr.PositionDocLinks = MtrChildDoc.GetAllLinkedDocs(Doc.DocId);
-            }
-        }
-
-        /// <summary>
-        ///  Метод проверки на режим только чтение
-        /// </summary>
-        protected override void OnSignChanged()
-        {
-           base.OnSignChanged();
-
-           #region установка режима только чтение
-            if (IsInDocView)
-                DocumentReadOnly = true;
-            else if (!DocEditable)
-                DocumentReadOnly = true;
-            else
-                DocumentReadOnly = false;
-
-           #endregion
-
-            SetHeadDivisionText();
+            get { return (MTRClaim) Doc; }
         }
 
         private bool DocumentReadOnly
@@ -294,7 +108,142 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        /// Обновляет поля специфичные для данного документа(без полной перезагрузки страницы)
+        ///     Не распределенные документы
+        /// </summary>
+        private List<MtrChildDoc> NOTDistributedPayDocs
+        {
+            get
+            {
+                if (payDocsSchetDogovor != null)
+                {
+                    var notDistr = new List<MtrChildDoc>();
+                    foreach (var pd in payDocsSchetDogovor)
+                        if (!Mtr.PositionDocLinks.Exists(i =>
+                            i.DocId == pd.DocId && i.LinkType == MtrChildType.ДокументОснованиеПлатежа))
+                            notDistr.Add(pd);
+
+                    return notDistr;
+                }
+
+                return new List<MtrChildDoc>();
+            }
+        }
+
+        /// <summary>
+        ///     Распределенные документы
+        /// </summary>
+        private List<MtrChildDoc> DistributedPayDocs
+        {
+            get
+            {
+                if (payDocsSchetDogovor != null)
+                {
+                    var notDistr = new List<MtrChildDoc>();
+                    foreach (var pd in payDocsSchetDogovor)
+                        if (Mtr.PositionDocLinks.Exists(i =>
+                            i.DocId == pd.DocId && i.LinkType == MtrChildType.ДокументОснованиеПлатежа))
+                            notDistr.Add(pd);
+
+                    return notDistr;
+                }
+
+                return new List<MtrChildDoc>();
+            }
+        }
+
+        /// <summary>
+        ///     Инициализация конкретного документа
+        /// </summary>
+        /// <param name="copy">Параметр указывается если копируем документ</param>
+        protected override void DocumentInitialization(Document copy = null)
+        {
+            if (copy == null)
+                Doc = new MTRClaim();
+            else
+                Doc = (MTRClaim) copy;
+
+            Doc.Date = DateTime.Today;
+            ShowDocDate = false;
+        }
+
+        /// <summary>
+        ///     Установить параметры контролов: параметры, дефолтные значения и т.д.
+        /// </summary>
+        protected override void SetControlProperties()
+        {
+            Company.IsRequired = Mtr.Organization.IsRequired;
+            Subdivision.IsRequired = Mtr.Subdivision.IsRequired;
+            PerformerOfSubdivision.IsRequired = Mtr.PerformerOfSubdivision.IsRequired;
+
+            DBSDocBasis.Filter.Type.DocTypeParams.AddRange(GetControlTypeFilter(Mtr.Basis.DocFieldId));
+            DBSDocBasis.ConfirmRemoveMsg = Resx.GetString("msgOsnAttention7");
+
+            // счета
+            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam
+                {DocTypeID = ((int) DocTypeEnum.Счет).ToString(), QueryType = DocTypeQueryType.Equals});
+            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam
+                {DocTypeID = ((int) DocTypeEnum.ИнвойсПроформа).ToString(), QueryType = DocTypeQueryType.Equals});
+
+            // договора
+            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam
+                {DocTypeID = ((int) DocTypeEnum.Договор).ToString(), QueryType = DocTypeQueryType.WithChildren});
+
+            // приложения
+            DBSDocToLink.Filter.Type.DocTypeParams.Add(new DocTypeParam
+                {DocTypeID = ((int) DocTypeEnum.Приложение).ToString(), QueryType = DocTypeQueryType.WithChildren});
+
+            if (!Mtr.IsNew)
+            {
+                DBSDocToLink.Filter.Date.Value = Mtr.Date.ToSqlDate();
+                DBSDocToLink.Filter.Date.DateSearchType = DateSearchType.MoreThan;
+            }
+
+            SetHeadDivisionText();
+
+            if (IsInDocView)
+                DocumentReadOnly = true;
+            else if (!DocEditable)
+                DocumentReadOnly = true;
+        }
+
+        /// <summary>
+        ///     Перегрузка метода загрузки данных по идентификатору
+        /// </summary>
+        /// <param name="id">Идентификатор</param>
+        protected override void LoadData(string id)
+        {
+            base.LoadData(id);
+
+            if (!id.IsNullEmptyOrZero())
+            {
+                Mtr.ReloadPositions();
+                Mtr.PositionDocLinks = MtrChildDoc.GetAllLinkedDocs(Doc.DocId);
+            }
+        }
+
+        /// <summary>
+        ///     Метод проверки на режим только чтение
+        /// </summary>
+        protected override void OnSignChanged()
+        {
+            base.OnSignChanged();
+
+            #region установка режима только чтение
+
+            if (IsInDocView)
+                DocumentReadOnly = true;
+            else if (!DocEditable)
+                DocumentReadOnly = true;
+            else
+                DocumentReadOnly = false;
+
+            #endregion
+
+            SetHeadDivisionText();
+        }
+
+        /// <summary>
+        ///     Обновляет поля специфичные для данного документа(без полной перезагрузки страницы)
         /// </summary>
         protected override void RefreshCurrentDoc()
         {
@@ -303,8 +252,8 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Копирование данных документа на контролы. 
-        ///  Этот метод может оставатся пустым, если нет необходимости в копировании документа
+        ///     Копирование данных документа на контролы.
+        ///     Этот метод может оставатся пустым, если нет необходимости в копировании документа
         /// </summary>
         protected override void DocumentToControls()
         {
@@ -317,14 +266,14 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Проверка корректности вводимых полей
+        ///     Проверка корректности вводимых полей
         /// </summary>
         /// <returns>true - OK</returns>
         protected override bool ValidateDocument(out List<string> errors, params string[] exeptions)
         {
             base.ValidateDocument(out errors);
 
-            if(Mtr.Positions == null || Mtr.Positions.Count == 0)
+            if (Mtr.Positions == null || Mtr.Positions.Count == 0)
                 errors.Add("Необходимо добавить хотя бы одну позицию по заявке");
 
             if (errors.Count > 0)
@@ -348,7 +297,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Показать диалог редактирования
+        ///     Показать диалог редактирования
         /// </summary>
         private void ShowEditDialog(int order)
         {
@@ -359,14 +308,15 @@ namespace Kesco.App.Web.Docs.MTRclaim
             JS.Write("gi('dlgHeaderText').innerText='{0}';", lblEdit);
 
             // добавление события нажатия на кнопку
-            JS.Write("gi('{0}').onclick={1};", btnAction.HtmlID, "function(){cmd('cmd','AddEditPosition','mtrPos', '" + order + "');}");
+            JS.Write("gi('{0}').onclick={1};", btnAction.HtmlID,
+                "function(){cmd('cmd','AddEditPosition','mtrPos', '" + order + "');}");
 
             // Показать диалог
             JS.Write("ShowMtrDlg();");
         }
 
         /// <summary>
-        ///  Показать диалог копирования
+        ///     Показать диалог копирования
         /// </summary>
         private void ShowCopyDialog(int order)
         {
@@ -383,23 +333,25 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Показать диалог удаления
+        ///     Показать диалог удаления
         /// </summary>
         private void ShowDeleteDialog(int order)
         {
             var item = Mtr.Positions.First(p => p.MtrOrder == order);
             // формируем строку сообщения
-            JS.Write("gi('divDelMessage').innerText='{0}';", string.Format("Вы действительно хотите удалить наименование: {0}?", item.MtrName));
+            JS.Write("gi('divDelMessage').innerText='{0}';",
+                string.Format("Вы действительно хотите удалить наименование: {0}?", item.MtrName));
 
             // добавление события нажатия на кнопку
-            JS.Write("gi('{0}').onclick={1};", btnDelete.HtmlID, "function(){cmd('cmd','DeletePosition','mtrPos', '" + order + "');}");
+            JS.Write("gi('{0}').onclick={1};", btnDelete.HtmlID,
+                "function(){cmd('cmd','DeletePosition','mtrPos', '" + order + "');}");
 
             // Показать диалог
             JS.Write("gi('DeleteDialog').style.display='block';");
         }
 
         /// <summary>
-        ///  Заполнить конкретные значения позиции в окне
+        ///     Заполнить конкретные значения позиции в окне
         /// </summary>
         public void ShowPositionDetails(int order)
         {
@@ -411,15 +363,16 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 txbMtrName.Value = pos.MtrName;
                 txbSpecifications.Value = pos.Specifications;
                 txaPurposeOfAcquisition.Value = pos.PurposeOfAcquisition;
-                dpPurchasesTerm.ValueDate = pos.PurchasesTerm == DateTime.MinValue ? (DateTime?)null : pos.PurchasesTerm;
+                dpPurchasesTerm.ValueDate =
+                    pos.PurchasesTerm == DateTime.MinValue ? (DateTime?) null : pos.PurchasesTerm;
                 txbUnit.Value = pos.Unit;
-                txbQuantity.Value = pos.Quantity == null ? null: pos.Quantity.Value.ToString("0.####");
+                txbQuantity.Value = pos.Quantity == null ? null : pos.Quantity.Value.ToString("0.####");
                 txaDescription.Value = pos.Description;
             }
         }
 
         /// <summary>
-        ///  Показать информацию об изменениях
+        ///     Показать информацию об изменениях
         /// </summary>
         private void ShowChangeInfo(int order)
         {
@@ -432,7 +385,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Валидация позиции документа
+        ///     Валидация позиции документа
         /// </summary>
         /// <returns> true - OK</returns>
         private bool ValidateMtrPosition(MTRClaimItem pos)
@@ -459,7 +412,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 erros.Add("Не заполнено поле: 'Количество'");
             else if (pos.Quantity == 0)
                 erros.Add("Поле 'Количество' не может принимать значение 0");
-            else if(pos.Quantity < 0)
+            else if (pos.Quantity < 0)
                 erros.Add("Поле 'Количество' не может принимать минусовое значение");
 
             // отключено по просьбе  Анисимова
@@ -474,15 +427,15 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Проверяет полностью идентичные записи в Positions
+        ///     Проверяет полностью идентичные записи в Positions
         /// </summary>
         private bool IdentityExists(MTRClaimItem pos)
         {
-           return Mtr.Positions.Any(p => IsIdentical(p, pos));
+            return Mtr.Positions.Any(p => IsIdentical(p, pos));
         }
 
         /// <summary>
-        ///  проверяет две позиции и возвращает true если они полностью идентичны
+        ///     проверяет две позиции и возвращает true если они полностью идентичны
         /// </summary>
         /// <returns>true - identical</returns>
         private bool IsIdentical(MTRClaimItem item1, MTRClaimItem item2)
@@ -506,7 +459,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Добавление позиции
+        ///     Добавление позиции
         /// </summary>
         private void AddPosition()
         {
@@ -535,7 +488,6 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 var result = SaveDocument(false);
                 if (!result)
                     Mtr.Positions.Remove(newPos);
-
             }
 
             JS.Write("cmd('cmd','RefreshPositions');");
@@ -543,7 +495,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Редактирование позиции
+        ///     Редактирование позиции
         /// </summary>
         private void EditPosition(int id)
         {
@@ -561,10 +513,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 if (!ValidateMtrPosition(pos))
                     return;
 
-                if (!Mtr.IsNew)
-                {
-                    pos.UpdateData();
-                }
+                if (!Mtr.IsNew) pos.UpdateData();
             }
 
             JS.Write("cmd('cmd','RefreshPositions');");
@@ -572,7 +521,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        /// Удаление позиции
+        ///     Удаление позиции
         /// </summary>
         private void DeletePosition(int id)
         {
@@ -581,16 +530,13 @@ namespace Kesco.App.Web.Docs.MTRclaim
             {
                 var toDelete = Mtr.Positions[index];
 
-                if (!Mtr.IsNew)
-                {
-                    toDelete.Delete();
-                }
+                if (!Mtr.IsNew) toDelete.Delete();
 
                 Mtr.Positions.RemoveAt(index);
 
                 // пересчет номера в коллекции
                 // p.s пересчет номера в базе происходит в тригере
-                for (int i = index; i < Mtr.Positions.Count; i++)
+                for (var i = index; i < Mtr.Positions.Count; i++)
                     Mtr.Positions[i].MtrOrder--;
             }
 
@@ -599,7 +545,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Поднять позицию вверх
+        ///     Поднять позицию вверх
         /// </summary>
         private void UpperPosition(int order)
         {
@@ -616,8 +562,8 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 if (Mtr.IsNew)
                     Mtr.Positions[index].MtrOrder--;
                 else
-                    Mtr.Positions[index].MtrOrder-=2;
-                   
+                    Mtr.Positions[index].MtrOrder -= 2;
+
                 try
                 {
                     if (!Mtr.IsNew)
@@ -626,7 +572,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 catch (Exception e)
                 {
                     // откатываем значение назад
-                    Mtr.Positions[index].MtrOrder++; 
+                    Mtr.Positions[index].MtrOrder++;
 
                     var dex = new DetailedException("Ошибка изменения порядка позиции: " + e.Message, e);
                     Logger.WriteEx(dex);
@@ -642,7 +588,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Опустить позицию вниз
+        ///     Опустить позицию вниз
         /// </summary>
         private void DownPosition(int order)
         {
@@ -682,7 +628,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
 
 
         /// <summary>
-        ///  Привести диалог добавления/редактирования в исходное состояние
+        ///     Привести диалог добавления/редактирования в исходное состояние
         /// </summary>
         private void ClearAddEditDialog()
         {
@@ -703,7 +649,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Обновить таблицу позиций
+        ///     Обновить таблицу позиций
         /// </summary>
         public void RefreshPositions(bool reload = true)
         {
@@ -718,7 +664,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Отрисовка позиций
+        ///     Отрисовка позиций
         /// </summary>
         public void RenderPositions(TextWriter w)
         {
@@ -732,8 +678,11 @@ namespace Kesco.App.Web.Docs.MTRclaim
             // рендер кнопки добавления
             if (DocEditable && !IsPrintVersion)
             {
-                w.Write("<td><input title='{0}' name='' type='image' alt='' src='/styles/new.gif' border=0 complete='complete' style='cursor:hand'", lblAddition);
-                w.Write(" onkeydown=\"if(event.keyCode==13){event.returnValue=false;cmd('cmd','AddEditDialog','mtrPos', '');}\"");
+                w.Write(
+                    "<td><input title='{0}' name='' type='image' alt='' src='/styles/new.gif' border=0 complete='complete' style='cursor:hand'",
+                    lblAddition);
+                w.Write(
+                    " onkeydown=\"if(event.keyCode==13){event.returnValue=false;cmd('cmd','AddEditDialog','mtrPos', '');}\"");
                 w.Write(" onclick=\"cmd('cmd','AddEditDialog');\"/></td>");
             }
 
@@ -751,7 +700,11 @@ namespace Kesco.App.Web.Docs.MTRclaim
             if (DocSigned)
             {
                 var tooltip = Resx.GetString("ttAddShetDog");
-                w.Write("<td class=\"clHover brdTop brdRight\" style=\"width:150px; cursor: pointer;\" title=\"" + tooltip + "\" onclick=\"ShowLinksDialog();\" cursor: pointer>{0}{1}</td>", "<img style=\"border-image: none; float: left; text-align: left;\" src=\"/styles/OutDoc.gif\">", "Счет, договор");
+                w.Write(
+                    "<td class=\"clHover brdTop brdRight\" style=\"width:150px; cursor: pointer;\" title=\"" + tooltip +
+                    "\" onclick=\"ShowLinksDialog();\" cursor: pointer>{0}{1}</td>",
+                    "<img style=\"border-image: none; float: left; text-align: left;\" src=\"/styles/OutDoc.gif\">",
+                    "Счет, договор");
                 w.Write("<td class=\"brdTop\" width='150px''>{0}</td>", "Платежи");
                 w.Write("<td class=\"brdTop brdLeft\" width='150px''>{0}</td>", "ТТН");
             }
@@ -761,30 +714,39 @@ namespace Kesco.App.Web.Docs.MTRclaim
             if (Mtr.Positions != null)
             {
                 Mtr.Positions.Sort((a, b) => a.MtrOrder.CompareTo(b.MtrOrder));
-                int counter = 0;
+                var counter = 0;
                 foreach (var pos in Mtr.Positions)
                 {
                     counter++;
-                    w.Write("<tr onMouseover=\"this.bgColor='LightGrey'\" onMouseout=\"this.bgColor='whitesmoke'\" ondragover=\"allowDrop();\"  ondrop=\"GetDropInfo('{0}');\">", pos.MtrOrder);
+                    w.Write(
+                        "<tr onMouseover=\"this.bgColor='LightGrey'\" onMouseout=\"this.bgColor='whitesmoke'\" ondragover=\"allowDrop();\"  ondrop=\"GetDropInfo('{0}');\">",
+                        pos.MtrOrder);
 
                     // рендер кнопки редактирования
                     if (DocEditable && !IsPrintVersion)
                     {
                         w.Write("<td nowrap>");
                         // рендер кнопки редактирования
-                        w.Write("<input title='{0}' name='' type='image' alt='' src='/styles/edit.gif' border=0 complete='complete' style='cursor:hand'", lblEdit);
+                        w.Write(
+                            "<input title='{0}' name='' type='image' alt='' src='/styles/edit.gif' border=0 complete='complete' style='cursor:hand'",
+                            lblEdit);
                         w.Write(" onclick=\"cmd('cmd','AddEditDialog','mtrPos', '" + pos.MtrOrder + "');\"/>");
 
                         w.Write("&nbsp;");
 
                         // рендер кнопки копирования
-                        w.Write("<input title='{0}' name='' type='image' alt='' src='/styles/Copy.gif' border=0 complete='complete' style='cursor:hand'", cmdCopy);
+                        w.Write(
+                            "<input title='{0}' name='' type='image' alt='' src='/styles/Copy.gif' border=0 complete='complete' style='cursor:hand'",
+                            cmdCopy);
                         w.Write(" onclick=\"cmd('cmd','CopyDialog','mtrPos', '" + pos.MtrOrder + "');\"/>");
 
                         w.Write("&nbsp;");
                         // рендер кнопки удаления + позиционирование диалога под кнопкой
-                        w.Write("<input title='{0}' name='' type='image' alt='' src='/styles/Delete.gif' border=0 complete='complete' style='cursor:hand'", lblRemoval);
-                        w.Write(" onclick=\"cmd('cmd','DeleteDialog','mtrPos', '" + pos.MtrOrder + "'); var near = $('#DeleteDialog');  near.css({top:event.pageY + 10, left: event.pageX + 10});\"/>");
+                        w.Write(
+                            "<input title='{0}' name='' type='image' alt='' src='/styles/Delete.gif' border=0 complete='complete' style='cursor:hand'",
+                            lblRemoval);
+                        w.Write(" onclick=\"cmd('cmd','DeleteDialog','mtrPos', '" + pos.MtrOrder +
+                                "'); var near = $('#DeleteDialog');  near.css({top:event.pageY + 10, left: event.pageX + 10});\"/>");
 
                         w.Write("</td>");
                     }
@@ -852,7 +814,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
                     // кнопки изменения позиции
                     if (DocEditable && !IsPrintVersion)
                     {
-                        int count = Mtr.Positions.Count;
+                        var count = Mtr.Positions.Count;
 
                         if (count > 1)
                         {
@@ -866,15 +828,20 @@ namespace Kesco.App.Web.Docs.MTRclaim
                             w.Write("<td>");
                             if (index != 0)
                             {
-                                w.Write("<div><input title='передвинуть вверх' name='' type='image'src='/styles/ScrollUpEnabled.gif' style='cursor:hand' ");
-                                w.Write("onclick=\"Wait.render(true); cmdasync('cmd','UpPosition','mtrPos', '" + pos.MtrOrder + "');\"/></div>");
+                                w.Write(
+                                    "<div><input title='передвинуть вверх' name='' type='image'src='/styles/ScrollUpEnabled.gif' style='cursor:hand' ");
+                                w.Write("onclick=\"Wait.render(true); cmdasync('cmd','UpPosition','mtrPos', '" +
+                                        pos.MtrOrder + "');\"/></div>");
                             }
 
                             if (index != count - 1)
                             {
-                                w.Write("<div><input title='передвинуть вниз' name='' type='image' src='/styles/ScrollDownEnabled.gif' style='cursor:hand' ");
-                                w.Write("onclick=\"Wait.render(true); cmdasync('cmd','DownPosition','mtrPos', '" + pos.MtrOrder + "');\"/></div>");
+                                w.Write(
+                                    "<div><input title='передвинуть вниз' name='' type='image' src='/styles/ScrollDownEnabled.gif' style='cursor:hand' ");
+                                w.Write("onclick=\"Wait.render(true); cmdasync('cmd','DownPosition','mtrPos', '" +
+                                        pos.MtrOrder + "');\"/></div>");
                             }
+
                             w.Write("</td>");
                         }
                     }
@@ -887,11 +854,11 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Отрисовка позиций для подтверждения
+        ///     Отрисовка позиций для подтверждения
         /// </summary>
         public void RenderPositForDialog(TextWriter w, int checkedPos, int dropDocId)
         {
-            if(Mtr.IsNew) return;
+            if (Mtr.IsNew) return;
 
             w.Write("<table border=1 style='border:1px solid gray; border-collapse:collapse;'>");
 
@@ -947,7 +914,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
                     V4Controls.Add(che);
 
                     w.Write("</td>");
-                   
+
                     // номер
                     w.Write("<td align='center'>");
                     w.Write(pos.MtrOrder);
@@ -960,10 +927,12 @@ namespace Kesco.App.Web.Docs.MTRclaim
 
                     // частичная оплата
                     w.Write("<td>");
-                    w.Write("<input id='chprt0{0}' style='display: none;' type='checkbox' onclick='var el = gi(\"prt0{0}\"); if(this.checked) {{el.style.display = \"inline\";}}" +
-                            " else{{el.style.display = \"none\";el.value = \"\";cmd(\"cmd\", \"PartialPay\", \"numVal\", \"0\", \"DropDocId\", \"{1}\");}}'/>&nbsp;"+
-                            "<INPUT id = 'prt0{0}' title='Количество' type='number' style='display: none; width: 30px;' min='0' max='{2}'" +
-                            " onchange='cmd(\"cmd\", \"PartialPay\", \"numVal\", this.value.toString(), \"DropDocId\", \"{1}\");'/>", pos.MtrOrder, dropDocId, pos.Quantity != null? pos.Quantity.Value.ToString("####"): "");
+                    w.Write(
+                        "<input id='chprt0{0}' style='display: none;' type='checkbox' onclick='var el = gi(\"prt0{0}\"); if(this.checked) {{el.style.display = \"inline\";}}" +
+                        " else{{el.style.display = \"none\";el.value = \"\";cmd(\"cmd\", \"PartialPay\", \"numVal\", \"0\", \"DropDocId\", \"{1}\");}}'/>&nbsp;" +
+                        "<INPUT id = 'prt0{0}' title='Количество' type='number' style='display: none; width: 30px;' min='0' max='{2}'" +
+                        " onchange='cmd(\"cmd\", \"PartialPay\", \"numVal\", this.value.toString(), \"DropDocId\", \"{1}\");'/>",
+                        pos.MtrOrder, dropDocId, pos.Quantity != null ? pos.Quantity.Value.ToString("####") : "");
                     w.Write("</td>");
 
                     w.Write("</tr>");
@@ -974,7 +943,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Обновить таблицы для формы добавления связей 
+        ///     Обновить таблицы для формы добавления связей
         /// </summary>
         public void RefreshLinksDialogTables()
         {
@@ -986,37 +955,38 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        /// Обновить нераспределенные документы таблицы для формы добавления связей 
+        ///     Обновить нераспределенные документы таблицы для формы добавления связей
         /// </summary>
         public void RefreshNOTDistributedTable()
         {
             using (var w = new StringWriter())
             {
                 RenderPayBasisNOTDistributed(w, true);
-                JS.Write("gi('NOTDistributedDocs').innerHTML={0};", HttpUtility.JavaScriptStringEncode(w.ToString(), true));
+                JS.Write("gi('NOTDistributedDocs').innerHTML={0};",
+                    HttpUtility.JavaScriptStringEncode(w.ToString(), true));
             }
         }
 
         /// <summary>
-        ///  Сформировать таблицы для формы добавления связей
+        ///     Сформировать таблицы для формы добавления связей
         /// </summary>
         public void RenderLinksDialogTables(TextWriter w)
         {
             if (Mtr.IsNew)
                 return;
 
-               payDocsSchetDogovor = MtrChildDoc.GetPayDocumentsNotDistributed(Mtr.DocId);
+            payDocsSchetDogovor = MtrChildDoc.GetPayDocumentsNotDistributed(Mtr.DocId);
 
-               RenderPayBasisNOTDistributed(w, false);
-               
-               w.Write("<br/>");
-               w.Write("<br/>");
+            RenderPayBasisNOTDistributed(w, false);
 
-               RenderPay(w); 
+            w.Write("<br/>");
+            w.Write("<br/>");
+
+            RenderPay(w);
         }
 
         /// <summary>
-        ///  Показ на форме НЕ распределенные документы
+        ///     Показ на форме НЕ распределенные документы
         /// </summary>
         public void RenderPayBasisNOTDistributed(TextWriter w, bool refreshFromDb)
         {
@@ -1032,7 +1002,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Показ на диалоге распределенные документы
+        ///     Показ на диалоге распределенные документы
         /// </summary>
         public void RenderPay(TextWriter w)
         {
@@ -1045,7 +1015,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Отрисовать документы готовые к DragAndDrop
+        ///     Отрисовать документы готовые к DragAndDrop
         /// </summary>
         /// <param name="w">Поток</param>
         /// <param name="payDocs">Список документов</param>
@@ -1061,7 +1031,9 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 if (distributed)
                     w.Write("<div>{0}:</div>", "Распределенные документы");
                 else
-                    w.Write("<div style='background-color:rgba(190, 116, 116, 1); width: 257px; text-align:center;'>{0}:</div>", "Не распределенные документы");
+                    w.Write(
+                        "<div style='background-color:rgba(190, 116, 116, 1); width: 257px; text-align:center;'>{0}:</div>",
+                        "Не распределенные документы");
 
                 w.Write("<table border=1 style='border:1px solid gray; border-collapse:collapse;'>");
                 w.Write("<tr align='center'>");
@@ -1082,7 +1054,9 @@ namespace Kesco.App.Web.Docs.MTRclaim
                     // Документ основания оплаты
                     w.Write("<td>");
 
-                    w.Write("<a draggable='true' ondragstart='SetDragInfo({0});' onclick='OpenDoc({0});' href='#'> <img border='0' src='/styles/DocMain.gif'>", s.DocId);
+                    w.Write(
+                        "<a draggable='true' ondragstart='SetDragInfo({0});' onclick='OpenDoc({0});' href='#'> <img border='0' src='/styles/DocMain.gif'>",
+                        s.DocId);
                     w.Write(s.DocumentName);
                     w.Write("</a>");
                     w.Write("</td>");
@@ -1103,14 +1077,15 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Обработка перетаскивания документа
+        ///     Обработка перетаскивания документа
         /// </summary>
         private void DocDropedAction(int pos, int dropDocId)
         {
-
             var mtrPos = Mtr.Positions.First(p => p.MtrOrder == pos);
 
-            if(Mtr.PositionDocLinks.Exists(i => i.DocId == dropDocId && i.LinkType == MtrChildType.ДокументОснованиеПлатежа && i.MtrPositionId == mtrPos.MtrPositionId))
+            if (Mtr.PositionDocLinks.Exists(i =>
+                i.DocId == dropDocId && i.LinkType == MtrChildType.ДокументОснованиеПлатежа &&
+                i.MtrPositionId == mtrPos.MtrPositionId))
             {
                 ShowMessage("Для данной позиции уже связан аналогичный документ");
                 return;
@@ -1119,7 +1094,8 @@ namespace Kesco.App.Web.Docs.MTRclaim
             using (var w = new StringWriter())
             {
                 RenderPositForDialog(w, pos, dropDocId);
-                JS.Write("gi('CheckedPositions').innerHTML={0};", HttpUtility.JavaScriptStringEncode(w.ToString(), true));
+                JS.Write("gi('CheckedPositions').innerHTML={0};",
+                    HttpUtility.JavaScriptStringEncode(w.ToString(), true));
             }
 
             // позиционировать диалог там, где претащили
@@ -1132,62 +1108,12 @@ namespace Kesco.App.Web.Docs.MTRclaim
             JS.Write("var chprt = gi(\"chprt0{0}\"); chprt.style.display = \"inline\";", pos);
 
             // добавление события нажатия на кнопку
-            JS.Write("gi('{0}').onclick={1};", btnConfLnk.HtmlID, "function(){cmd('cmd','DocLinked','DropDocId', '" + dropDocId + "'); HideLinkConfirmDlg();}");
+            JS.Write("gi('{0}').onclick={1};", btnConfLnk.HtmlID,
+                "function(){cmd('cmd','DocLinked','DropDocId', '" + dropDocId + "'); HideLinkConfirmDlg();}");
         }
 
         /// <summary>
-        /// Не распределенные документы
-        /// </summary>
-        private List<MtrChildDoc> NOTDistributedPayDocs
-        {
-            get
-            {
-                if (payDocsSchetDogovor != null)
-                {
-                    var notDistr = new List<MtrChildDoc>();
-                    foreach (var pd in payDocsSchetDogovor)
-                    {
-                        if(!Mtr.PositionDocLinks.Exists(i=> i.DocId == pd.DocId && i.LinkType == MtrChildType.ДокументОснованиеПлатежа))
-                            notDistr.Add(pd);
-                    }
-
-                    return notDistr;
-                }
-
-                return new List<MtrChildDoc>();
-            }
-        }
-
-        /// <summary>
-        ///  Распределенные документы
-        /// </summary>
-        private List<MtrChildDoc> DistributedPayDocs
-        {
-            get
-            {
-                if (payDocsSchetDogovor != null)
-                {
-                    var notDistr = new List<MtrChildDoc>();
-                    foreach (var pd in payDocsSchetDogovor)
-                    {
-                        if (Mtr.PositionDocLinks.Exists(i => i.DocId == pd.DocId && i.LinkType == MtrChildType.ДокументОснованиеПлатежа))
-                            notDistr.Add(pd);
-                    }
-
-                    return notDistr;
-                }
-
-                return new List<MtrChildDoc>();
-            }
-        }
-
-        /// <summary>
-        ///  Документы основание оплаты - счет, договор, приложение к договору
-        /// </summary>
-        private List<MtrChildDoc> payDocsSchetDogovor;
-
-        /// <summary>
-        ///  Добавление связи к выбранным позициям
+        ///     Добавление связи к выбранным позициям
         /// </summary>
         private void DocLinkedAction(int ldocId)
         {
@@ -1200,10 +1126,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 var linkDocs = MtrChildDoc.GetLinkedDocs(ldocId);
 
                 foreach (var p in Mtr.Positions)
-                {
                     if (p.Checked)
-                    {
-                        // не добавлять документ, если он уже есть
                         if (!Mtr.PositionDocLinks.Exists(i => i.DocId == ldocId && i.MtrPositionId == p.MtrPositionId))
                         {
                             var linkDoc = new MtrChildDoc
@@ -1234,8 +1157,6 @@ namespace Kesco.App.Web.Docs.MTRclaim
 
                             Mtr.PositionDocLinks.AddRange(lnkDocs);
                         }
-                    }
-                }
 
                 RefreshPositions(false);
                 RefreshNOTDistributedTable();
@@ -1244,7 +1165,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Удаление связаного документа
+        ///     Удаление связаного документа
         /// </summary>
         private void LinkedDocDelete(int posId, int lnkDocId, bool ask)
         {
@@ -1253,15 +1174,17 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 JS.Write("CustomConfirmChangedTwoButtons.save = function() {SetItemParam('ConfirmChangedTwoButtons');" +
                          "gi('v4_divDialogBox').style.display = \"none\";" +
                          "gi('v4_divDialogOverlay').style.display = \"none\";" +
-                         "cmd('cmd', 'RemoveLinkDoc','mtrPos', '" + posId + "', 'LnkDocId', '" + lnkDocId + "', 'ask', '0');};");
+                         "cmd('cmd', 'RemoveLinkDoc','mtrPos', '" + posId + "', 'LnkDocId', '" + lnkDocId +
+                         "', 'ask', '0');};");
 
                 var doc = payDocsSchetDogovor.FirstOrDefault(i => i.DocId == lnkDocId);
 
                 var msg = Resx.GetString("msgQuestionDelete");
-                var confirmRemoveMsg = string.Format(msg , doc != null? doc.DocumentName: "");
+                var confirmRemoveMsg = string.Format(msg, doc != null ? doc.DocumentName : "");
 
-                JS.Write("CustomConfirmChangedTwoButtons.render('Удаление', '{0}', '{1}', '{2}', '');", confirmRemoveMsg, Resx.GetString("btnDelete"), Resx.GetString("ppBtnCancel"));
- 
+                JS.Write("CustomConfirmChangedTwoButtons.render('Удаление', '{0}', '{1}', '{2}', '');",
+                    confirmRemoveMsg, Resx.GetString("btnDelete"), Resx.GetString("ppBtnCancel"));
+
                 return;
             }
 
@@ -1270,234 +1193,21 @@ namespace Kesco.App.Web.Docs.MTRclaim
             {
                 var pos = Mtr.Positions[index];
                 foreach (var p in Mtr.PositionDocLinks)
-                {
-                    if (p.LinkType == MtrChildType.ДокументОснованиеПлатежа && p.MtrPositionId == pos.MtrPositionId && p.DocId == lnkDocId)
-                    {
+                    if (p.LinkType == MtrChildType.ДокументОснованиеПлатежа && p.MtrPositionId == pos.MtrPositionId &&
+                        p.DocId == lnkDocId)
                         p.Delete();
-                    }
-                }
 
-                Mtr.PositionDocLinks.RemoveAll(i => i.MtrPositionId == pos.MtrPositionId && (i.DocId == lnkDocId || i.ParentId == lnkDocId));
-       
+                Mtr.PositionDocLinks.RemoveAll(i =>
+                    i.MtrPositionId == pos.MtrPositionId && (i.DocId == lnkDocId || i.ParentId == lnkDocId));
+
                 RefreshPositions(false);
                 RefreshLinksDialogTables();
                 RefreshNOTDistributedTable();
             }
         }
 
-        #region События от контролов
-
         /// <summary>
-        ///  Установить предупреждение отсутствия/присутствия подписи руководителя
-        /// </summary>
-        private void SetHeadDivisionText()
-        {
-            string inscription = string.Empty;
-            string subDivision = Mtr.Subdivision.ValueString;
-            int orgId = Mtr.Organization.ValueInt;
-            if (!string.IsNullOrEmpty(subDivision) && orgId > 0)
-            {
-                int emplId = MTRClaim.GetHeadDivision(orgId, subDivision);
-
-                if (emplId == 0)
-                {
-                    inscription = Resx.GetString("msgHeadSignUnable") ?? "";
-                }
-                // если в списке подписей нет подписи руководителя, 
-                // s.SignId > 0 - строка "составил:" не считается, проверять только подписи 
-                else if (Doc.DocSigns == null || !Doc.DocSigns.Exists(s => s.SignId > 0 && (s.EmployeeId == emplId || s.EmployeeInsteadOf == emplId)))
-                {
-                    var userEditUrl = Config.user_form;
-                    var headerEmpl = new Employee(emplId.ToString());
-
-                    var linkbtn =
-                        string.Format(
-                            "<a class='v4_callerControl' data-id='{1}' caller-type='2' style=\"color:red\" href=\"#\" onclick=\"window.open('{0}?id={1}', '_blank', 'location=no, menubar=no, status=no, toolbar=no, resizable=yes, scrollbars=yes');\">{2}</a>",
-                            userEditUrl, emplId, IsRusLocal? headerEmpl.FIO : headerEmpl.FIOEn);
-
-
-                    inscription = Resx.GetString("msgNoHeadSign") + "</br>(" + linkbtn + ")";
-                }
-            }
-
-            JS.Write("gi('headDivision').innerHTML={0};", HttpUtility.JavaScriptStringEncode(inscription, true));
-        }
-
-
-        /// <summary>
-        /// Событие изменения организации
-        /// </summary>
-        protected void CompanyChanged(object sender, ProperyChangedEventArgs e)
-        {
-            var selCompany = ((Select)sender).Value;
-            Subdivision.Filter.PcId.Value = selCompany;
-            Subdivision.Filter.PcId.CompanyHowSearch = "0";
-            DBSDocBasis.Filter.PersonIDs.Value = selCompany;
-            Mtr.Organization.Value = selCompany.ToInt();
-
-            if (e.OldValue != e.NewValue)
-            {
-                Subdivision.Value = string.Empty;
-                Mtr.Subdivision.Value = string.Empty;
-
-                PerformerOfSubdivision.Value = string.Empty;
-                Mtr.PerformerOfSubdivision.Value = 0;
-            }
-        }
-
-        /// <summary>
-        /// Событие изменения подразделения
-        /// </summary>
-        protected void SubdivisionChanged(object sender, ProperyChangedEventArgs e)
-        {
-            var select = (Select) sender;
-            PerformerOfSubdivision.Filter.SubdivisionIDs.Value = select.SelectedItemsString;
-            PerformerOfSubdivision.Filter.SubdivisionIDs.SubdivisionHowSearch = select.ValueSelectEnum;
-            PerformerOfSubdivision.Filter.IdsCompany.CompanyHowSearch = "0";
-            Mtr.Subdivision.Value = select.Value;
-
-            if (e.OldValue != e.NewValue)
-            {
-                PerformerOfSubdivision.Value = string.Empty;
-                Mtr.PerformerOfSubdivision.Value = 0;
-            }
-
-            SetHeadDivisionText();
-        }
-
-        /// <summary>
-        /// Событие изменения исполнителя
-        /// </summary>
-        protected void PerformerChanged(object sender, ProperyChangedEventArgs e)
-        {
-            var curSender = (Select)sender;
-            Mtr.PerformerOfSubdivision.Value = curSender.Value.ToInt();
-        }
-
-        /// <summary>
-        ///  Событие поска исполнителя
-        /// </summary>
-        protected void PerformerOfSubdivision_OnBeforeSearch(object sender)
-        {
-            PerformerOfSubdivision.Filter.IdsCompany.Value = Company.Value;
-            PerformerOfSubdivision.Filter.IdsCompany.CompanyHowSearch = "0";
-            PerformerOfSubdivision.Filter.SubdivisionIDs.Value = string.IsNullOrEmpty(Subdivision.Value) ? "" : "'" + Subdivision.Value + "'";
-            PerformerOfSubdivision.Filter.SubdivisionIDs.SubdivisionHowSearch = "0";
-            PerformerOfSubdivision.Filter.Status.ValueStatus = СотоянияСотрудника.Работающие;
-        }
-
-        /// <summary>
-        /// Событие изменения основания документа
-        /// </summary>
-        protected void DBSDocBasis_OnChanged(object sender, ProperyChangedEventArgs e)
-        {
-            if (!e.NewValue.IsNullEmptyOrZero())
-            {
-                var value = e.NewValue.ToInt();
-
-                if (Mtr.BasisDocLinks.Exists(i => i.BaseDocId == value))
-                    return;
-
-                var link = new DocLink {BaseDocId = value, SequelDocId = Doc.DocId, DocFieldId = Mtr.Basis.DocFieldId};
-
-                Mtr.BasisDocLinks.Add(link);
-            }
-        }
-
-        /// <summary>
-        /// Событие удаление значения из списка документа основания
-        /// </summary>
-        protected void DBSDocBasis_OnDeleted(object sender, ProperyDeletedEventArgs e)
-        {
-            if (!e.DelValue.IsNullEmptyOrZero())
-            {
-                var index = Mtr.BasisDocLinks.FindIndex(i => i.BaseDocId == e.DelValue.ToInt());
-                if (index != -1)
-                {
-                    var link = Mtr.BasisDocLinks[index];
-                    if (link.DocLinkId > 0)
-                        link.Delete();
-
-                    Mtr.BasisDocLinks.RemoveAt(index);
-                }
-            }
-        }
-
-        /// <summary>
-        ///  Событие поставить галочку на все чекбоксы
-        /// </summary>
-        protected void CheckAll_Changed(object sender, ProperyChangedEventArgs e)
-        {
-            var check = ((CheckBox) sender).Checked;
-
-                foreach (var c in V4Controls)
-                {
-                    if (c.Key.StartsWith("che0"))
-                    {
-                        var che = (CheckBox) c.Value;
-                        che.Checked = check;
-                    }
-                }
-
-            foreach (var p in Mtr.Positions)
-            {
-                p.Checked = check;
-
-                // показывает и скрывает checks для частичной оплаты
-                if (check)
-                    JS.Write("var chprt = gi(\"chprt0{0}\"); chprt.style.display = \"inline\";", p.MtrOrder);
-                else
-                    JS.Write("var chprt = gi(\"chprt0{0}\"); var prt = gi(\"prt0{0}\"); chprt.style.display = \"none\"; chprt.checked = 0; prt.style.display = \"none\";", p.MtrOrder);
-            }
-
-            // вариант ниже НЕ обновляет серверную модель
-            // JS.Write(@"var myList = document.getElementsByClassName('ToCheckAll'); 
-            //            for (i = 0; i < myList.length; i++) {{
-            //               var ch = myList[i].firstElementChild;
-            //               ch.checked = {0};
-            //            }}", check ? "true" :"false");
-        }
-
-        /// <summary>
-        /// Снять выделения с CheckBox -ов выбора позиций
-        /// </summary>
-        private void ClearCheckControls()
-        {
-            foreach (var c in V4Controls)
-            {
-                if (c.Key.StartsWith("che0"))
-                {
-                    var che = (CheckBox)c.Value;
-                    che.Value = "0";
-                }
-            }
-        }
-
-        /// <summary>
-        ///  Общий обработчик события для чекбоксы выбора ссылок
-        /// </summary>
-        protected void CheckPosLink_Changed(object sender, ProperyChangedEventArgs e)
-        {
-            var che = (CheckBox) sender;
-            var pos = che.HtmlID.Replace("che0", "");
-            var posInt = pos.ToInt();
-
-            var position = Mtr.Positions.FirstOrDefault(i => i.MtrOrder == posInt);
-
-            if (position != null)
-                position.Checked = che.Checked;
-
-            // показывает и скрывает checks для частичной оплаты
-            if(che.Checked)
-                JS.Write("var chprt = gi(\"chprt0{0}\"); chprt.style.display = \"inline\";", posInt);
-            else
-                JS.Write("var chprt = gi(\"chprt0{0}\"); var prt = gi(\"prt0{0}\"); chprt.style.display = \"none\"; chprt.checked = 0; prt.style.display = \"none\";", posInt);
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Событие на изменение связи документа
+        ///     Событие на изменение связи документа
         /// </summary>
         protected void DocToLink_OnChanged(object sender, ProperyChangedEventArgs e)
         {
@@ -1506,14 +1216,14 @@ namespace Kesco.App.Web.Docs.MTRclaim
                 var value = e.NewValue.ToInt();
                 var ctrl = (Select) sender;
 
-               // DBSDocToLink.Value = string.Empty;
+                // DBSDocToLink.Value = string.Empty;
 
                 ConfirmDocToLinkWithMtr(true, value, ctrl.ValueText);
             }
         }
 
         /// <summary>
-        ///  Связывание документов, событие поиска
+        ///     Связывание документов, событие поиска
         /// </summary>
         protected void DBSDocToLink_OnBeforeSearch(object sender)
         {
@@ -1521,7 +1231,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Подтверждение связи документа и МТР
+        ///     Подтверждение связи документа и МТР
         /// </summary>
         protected void ConfirmDocToLinkWithMtr(bool ask, int linkDocId = 0, string docName = "")
         {
@@ -1548,7 +1258,8 @@ namespace Kesco.App.Web.Docs.MTRclaim
 
                 var confirmLinkDocMsg = Resx.GetString("msgLinkDoc") + " " + docName + "?";
 
-                JS.Write("CustomConfirmChangedTwoButtons.render('Связывание документа', '{0}', '{1}', '{2}', '');", confirmLinkDocMsg, Resx.GetString("cmdSave"), Resx.GetString("ppBtnCancel"));
+                JS.Write("CustomConfirmChangedTwoButtons.render('Связывание документа', '{0}', '{1}', '{2}', '');",
+                    confirmLinkDocMsg, Resx.GetString("cmdSave"), Resx.GetString("ppBtnCancel"));
             }
             else
             {
@@ -1561,7 +1272,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
 
                     link.Create();
 
-                    MtrChildDoc lnk = new MtrChildDoc();
+                    var lnk = new MtrChildDoc();
 
                     lnk.DocId = linkDocId;
                     lnk.DocumentName = docName;
@@ -1575,7 +1286,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Установка значения частичной оплаты
+        ///     Установка значения частичной оплаты
         /// </summary>
         private void PartialPayChanged(int numValue, int dropDocId)
         {
@@ -1584,20 +1295,21 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Отобразить остаток на складах
+        ///     Отобразить остаток на складах
         /// </summary>
         protected void RenderStoreDistributed(TextWriter w)
         {
-            if (Mtr.PositionDocLinks != null && Mtr.PositionDocLinks.Exists(p => p.LinkType == MtrChildType.ДокументТТН))
+            if (Mtr.PositionDocLinks != null &&
+                Mtr.PositionDocLinks.Exists(p => p.LinkType == MtrChildType.ДокументТТН))
             {
-
                 var colDocs = Mtr.PositionDocLinks.Where(m => m.LinkType == MtrChildType.ДокументТТН)
-                                  .Select(m => m.DocId.ToString());
-                var docs = Kesco.Lib.ConvertExtention.Convert.Collection2Str(colDocs);
+                    .Select(m => m.DocId.ToString());
+                var docs = Convert.Collection2Str(colDocs);
 
                 if (!string.IsNullOrEmpty(docs))
                 {
-                    var query = string.Format(@"SELECT Движения.КодДвиженияНаСкладе, Движения.ДатаДвижения,  Движения.РесурсРус, Движения.РесурсЛат, Движения.Количество, 
+                    var query = string.Format(
+                        @"SELECT Движения.КодДвиженияНаСкладе, Движения.ДатаДвижения,  Движения.РесурсРус, Движения.РесурсЛат, Движения.Количество, 
                     (SELECT TOP 1 ISNULL(ЕдиницаРус, ЕдиницаЛат) FROM Справочники.dbo.ЕдиницыИзмерения AS e WITH(NOLOCK) WHERE e.КодЕдиницыИзмерения = Движения.КодЕдиницыИзмерения) ЕдиницаИзмерения,
                     (SELECT TOP 1 Склад FROM Справочники.dbo.vwСклады AS v WITH(NOLOCK) WHERE v.КодСклада = Движения.КодСкладаПолучателя) НазваниеСклада,
                     (SELECT 
@@ -1626,8 +1338,10 @@ namespace Kesco.App.Web.Docs.MTRclaim
                             ID = "storeBtn",
                             V4Page = this,
                             Text = "Выдать  ",
-                            Style = "BACKGROUND: buttonface url(/Styles/Popup.gif) no-repeat right center; background-color: lightGray;",
-                            OnClick = "window.open('" + aktMoveUrl +  "','_blank','status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes');"
+                            Style =
+                                "BACKGROUND: buttonface url(/Styles/Popup.gif) no-repeat right center; background-color: lightGray;",
+                            OnClick = "window.open('" + aktMoveUrl +
+                                      "','_blank','status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes');"
                         };
                         storeBtn.RenderControl(w);
                         V4Controls.Add(storeBtn);
@@ -1644,7 +1358,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
 
                         w.Write("</tr>");
 
-                        for (int i = 0; i < dt.Rows.Count; i++)
+                        for (var i = 0; i < dt.Rows.Count; i++)
                         {
                             w.Write("<tr>");
                             w.Write("<td align='center'>{0}</td>", dt.Rows[i]["НазваниеСклада"]);
@@ -1666,7 +1380,7 @@ namespace Kesco.App.Web.Docs.MTRclaim
         }
 
         /// <summary>
-        ///  Выдано по акту
+        ///     Выдано по акту
         /// </summary>
         public void AktIssued(TextWriter w)
         {
@@ -1697,10 +1411,12 @@ WHERE связи.КодДокументаОснования = {0} AND связи
 
                 w.Write("</tr>");
 
-                for (int i = 0; i < dt.Rows.Count; i++)
+                for (var i = 0; i < dt.Rows.Count; i++)
                 {
                     w.Write("<tr>");
-                    w.Write("<td align='center'><a href='javascript:OpenDoc({0});'> <img src='/styles/DocMain.gif'> Акт перемещения</a></td>", dt.Rows[i]["КодДокумента"]);      
+                    w.Write(
+                        "<td align='center'><a href='javascript:OpenDoc({0});'> <img src='/styles/DocMain.gif'> Акт перемещения</a></td>",
+                        dt.Rows[i]["КодДокумента"]);
                     w.Write("<td align='center'>{0}</td>", dt.Rows[i]["РесурсРус"]);
                     w.Write("<td align='center'>{0}</td>", dt.Rows[i]["Количество"]);
                     w.Write("<td align='center'>{0}</td>", dt.Rows[i]["ЕдиницаИзмерения"]);
@@ -1713,15 +1429,376 @@ WHERE связи.КодДокументаОснования = {0} AND связи
         }
 
         /// <summary>
-        ///  Обновить остаток на складах
+        ///     Обновить остаток на складах
         /// </summary>
         public void RefreshStoreDistributed()
         {
             using (var w = new StringWriter())
             {
                 RenderStoreDistributed(w);
-                JS.Write("gi('StoreDistributed').innerHTML={0};", HttpUtility.JavaScriptStringEncode(w.ToString(), true));
+                JS.Write("gi('StoreDistributed').innerHTML={0};",
+                    HttpUtility.JavaScriptStringEncode(w.ToString(), true));
             }
         }
+
+
+        #region Override
+
+        /// <summary>
+        ///     Обработчик события загрузки страницы
+        /// </summary>
+        /// <param name="sender">Страница</param>
+        /// <param name="e">Параметры</param>
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!V4IsPostBack)
+            {
+                Company.Focus();
+
+                Subdivision.Filter.PcId.CompanyHowSearch = "0";
+
+                if (!CurrentPerson.IsNullEmptyOrZero())
+                {
+                    Subdivision.Filter.PcId.Value = Company.Value = CurrentPerson;
+                    DBSDocBasis.Filter.PersonIDs.Value = CurrentPerson;
+
+                    var personId = CurrentPerson.ToInt();
+                    Mtr.Organization.Value = personId;
+
+                    if (CurrentUser.OrganizationId == personId)
+                    {
+                        Mtr.Subdivision.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
+                        PerformerOfSubdivision.Value = CurrentUser.Id;
+                        Mtr.PerformerOfSubdivision.Value = CurrentUser.EmployeeId;
+
+                        SetHeadDivisionText();
+                    }
+                }
+                else if (Doc.IsNew && CurrentUser.OrganizationId != null)
+                {
+                    Subdivision.Filter.PcId.Value = Company.Value = CurrentUser.OrganizationId.ToString();
+                    DBSDocBasis.Filter.PersonIDs.Value = CurrentUser.OrganizationId.ToString();
+                    Mtr.Organization.Value = CurrentUser.OrganizationId;
+                    Mtr.Subdivision.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
+                    PerformerOfSubdivision.Value = CurrentUser.Id;
+                    Mtr.PerformerOfSubdivision.Value = CurrentUser.EmployeeId;
+
+                    SetHeadDivisionText();
+                }
+
+
+                lblQuantity = Resx.GetString("lblQuantity");
+                lblMtrName = Resx.GetString("lblMtrName");
+                lblSpecifications = Resx.GetString("lblSpecifications");
+                lblPurposeOfAcquisition = Resx.GetString("lblPurposeOfAcquisition");
+                lblPurchasesTerm = Resx.GetString("lblPurchasesTerm");
+                lblUnit = Resx.GetString("lblUnit");
+                lblNote = Resx.GetString("lblNotes");
+
+                lblPosCol2 = Resx.GetString("lblPosCol2");
+                lblUnitShort = Resx.GetString("lblUnitShort");
+                lblPosCol10 = Resx.GetString("lblPosCol10");
+                MsgDocs = Resx.GetString("msgDocs");
+                Resx.GetString("listFollowType");
+                Resx.GetString("lblPayment");
+                Resx.GetString("ppFltOsn");
+                Resx.GetString("lblCargowaybills");
+                lblAddition = Resx.GetString("lblAddition");
+                lblEdit = Resx.GetString("lblEdit");
+                lblRemoval = Resx.GetString("lblRemoval");
+                cmdCopy = Resx.GetString("cmdCopy");
+
+                btnCancel.Text = btnDelCancel.Text = Resx.GetString("ppBtnCancel");
+                btnAction.Text = Resx.GetString("cmdSave");
+                btnDelete.Text = Resx.GetString("btnDelete");
+
+                lblPartialPay = Resx.GetString("lblPartialPay");
+            }
+        }
+
+        /// <summary>
+        ///     Обработка клиентских команд
+        /// </summary>
+        protected override void ProcessCommand(string cmd, NameValueCollection param)
+        {
+            var order = param["mtrPos"].ToInt();
+            switch (cmd)
+            {
+                case "AddEditDialog":
+                    if (order > 0)
+                        ShowEditDialog(order);
+                    else
+                        ShowAddDialog();
+                    break;
+                case "CopyDialog":
+                    ShowCopyDialog(order);
+                    break;
+                case "DeleteDialog":
+                    ShowDeleteDialog(order);
+                    break;
+                case "AddEditPosition":
+                    if (order > 0)
+                        EditPosition(order);
+                    else
+                        AddPosition();
+                    break;
+                case "DeletePosition":
+                    DeletePosition(order);
+                    break;
+                case "UpPosition":
+                    UpperPosition(order);
+                    break;
+                case "DownPosition":
+                    DownPosition(order);
+                    break;
+                case "LinkDroped":
+                    var docId = param["DropDocId"].ToInt();
+                    DocDropedAction(order, docId);
+                    break;
+                case "DocLinked":
+                    var ldocId = param["DropDocId"].ToInt();
+                    DocLinkedAction(ldocId);
+                    break;
+                case "RemoveLinkDoc":
+                    var lnkDocId = param["LnkDocId"].ToInt();
+                    var ask = param["ask"].ToBool();
+                    LinkedDocDelete(order, lnkDocId, ask);
+                    break;
+                case "LinkWithMtr":
+                    var mtrLnkDocId = param["MtrLnkDocId"].ToInt();
+                    ConfirmDocToLinkWithMtr(false, mtrLnkDocId);
+                    break;
+
+                case "PartialPay":
+                    var numValue = param["numVal"].ToInt();
+                    var partDropDocId = param["DropDocId"].ToInt();
+                    PartialPayChanged(numValue, partDropDocId);
+                    break;
+
+                // еще один post нужен для совместной работы(comet)
+                case "RefreshPositions":
+                    RefreshPositions();
+                    break;
+
+                default:
+                    base.ProcessCommand(cmd, param);
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region События от контролов
+
+        /// <summary>
+        ///     Установить предупреждение отсутствия/присутствия подписи руководителя
+        /// </summary>
+        private void SetHeadDivisionText()
+        {
+            var inscription = string.Empty;
+            var subDivision = Mtr.Subdivision.ValueString;
+            var orgId = Mtr.Organization.ValueInt;
+            if (!string.IsNullOrEmpty(subDivision) && orgId > 0)
+            {
+                var emplId = MTRClaim.GetHeadDivision(orgId, subDivision);
+
+                if (emplId == 0)
+                {
+                    inscription = Resx.GetString("msgHeadSignUnable") ?? "";
+                }
+                // если в списке подписей нет подписи руководителя, 
+                // s.SignId > 0 - строка "составил:" не считается, проверять только подписи 
+                else if (Doc.DocSigns == null || !Doc.DocSigns.Exists(s =>
+                             s.SignId > 0 && (s.EmployeeId == emplId || s.EmployeeInsteadOf == emplId)))
+                {
+                    var userEditUrl = Config.user_form;
+                    var headerEmpl = new Employee(emplId.ToString());
+
+                    var linkbtn =
+                        string.Format(
+                            "<a class='v4_callerControl' data-id='{1}' caller-type='2' style=\"color:red\" href=\"#\" onclick=\"window.open('{0}?id={1}', '_blank', 'location=no, menubar=no, status=no, toolbar=no, resizable=yes, scrollbars=yes');\">{2}</a>",
+                            userEditUrl, emplId, IsRusLocal ? headerEmpl.FIO : headerEmpl.FIOEn);
+
+
+                    inscription = Resx.GetString("msgNoHeadSign") + "</br>(" + linkbtn + ")";
+                }
+            }
+
+            JS.Write("gi('headDivision').innerHTML={0};", HttpUtility.JavaScriptStringEncode(inscription, true));
+        }
+
+
+        /// <summary>
+        ///     Событие изменения организации
+        /// </summary>
+        protected void CompanyChanged(object sender, ProperyChangedEventArgs e)
+        {
+            var selCompany = ((Select) sender).Value;
+            Subdivision.Filter.PcId.Value = selCompany;
+            Subdivision.Filter.PcId.CompanyHowSearch = "0";
+            DBSDocBasis.Filter.PersonIDs.Value = selCompany;
+            Mtr.Organization.Value = selCompany.ToInt();
+
+            if (e.OldValue != e.NewValue)
+            {
+                Subdivision.Value = string.Empty;
+                Mtr.Subdivision.Value = string.Empty;
+
+                PerformerOfSubdivision.Value = string.Empty;
+                Mtr.PerformerOfSubdivision.Value = 0;
+            }
+        }
+
+        /// <summary>
+        ///     Событие изменения подразделения
+        /// </summary>
+        protected void SubdivisionChanged(object sender, ProperyChangedEventArgs e)
+        {
+            var select = (Select) sender;
+            PerformerOfSubdivision.Filter.SubdivisionIDs.Value = select.SelectedItemsString;
+            PerformerOfSubdivision.Filter.SubdivisionIDs.SubdivisionHowSearch = select.ValueSelectEnum;
+            PerformerOfSubdivision.Filter.IdsCompany.CompanyHowSearch = "0";
+            Mtr.Subdivision.Value = select.Value;
+
+            if (e.OldValue != e.NewValue)
+            {
+                PerformerOfSubdivision.Value = string.Empty;
+                Mtr.PerformerOfSubdivision.Value = 0;
+            }
+
+            SetHeadDivisionText();
+        }
+
+        /// <summary>
+        ///     Событие изменения исполнителя
+        /// </summary>
+        protected void PerformerChanged(object sender, ProperyChangedEventArgs e)
+        {
+            var curSender = (Select) sender;
+            Mtr.PerformerOfSubdivision.Value = curSender.Value.ToInt();
+        }
+
+        /// <summary>
+        ///     Событие поска исполнителя
+        /// </summary>
+        protected void PerformerOfSubdivision_OnBeforeSearch(object sender)
+        {
+            PerformerOfSubdivision.Filter.IdsCompany.Value = Company.Value;
+            PerformerOfSubdivision.Filter.IdsCompany.CompanyHowSearch = "0";
+            PerformerOfSubdivision.Filter.SubdivisionIDs.Value =
+                string.IsNullOrEmpty(Subdivision.Value) ? "" : "'" + Subdivision.Value + "'";
+            PerformerOfSubdivision.Filter.SubdivisionIDs.SubdivisionHowSearch = "0";
+            PerformerOfSubdivision.Filter.Status.ValueStatus = СотоянияСотрудника.Работающие;
+        }
+
+        /// <summary>
+        ///     Событие изменения основания документа
+        /// </summary>
+        protected void DBSDocBasis_OnChanged(object sender, ProperyChangedEventArgs e)
+        {
+            if (!e.NewValue.IsNullEmptyOrZero())
+            {
+                var value = e.NewValue.ToInt();
+
+                if (Mtr.BaseDocs.Exists(i => i.BaseDocId == value))
+                    return;
+
+                var link = new DocLink {BaseDocId = value, SequelDocId = Doc.DocId, DocFieldId = Mtr.Basis.DocFieldId};
+
+                Mtr.BaseDocs.Add(link);
+            }
+        }
+
+        /// <summary>
+        ///     Событие удаление значения из списка документа основания
+        /// </summary>
+        protected void DBSDocBasis_OnDeleted(object sender, ProperyDeletedEventArgs e)
+        {
+            if (!e.DelValue.IsNullEmptyOrZero())
+            {
+                var index = Mtr.BaseDocs.FindIndex(i => i.BaseDocId == e.DelValue.ToInt());
+                if (index != -1)
+                {
+                    var link = Mtr.BaseDocs[index];
+                    if (link.DocLinkId > 0)
+                        link.Delete();
+
+                    Mtr.BaseDocs.RemoveAt(index);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Событие поставить галочку на все чекбоксы
+        /// </summary>
+        protected void CheckAll_Changed(object sender, ProperyChangedEventArgs e)
+        {
+            var check = ((CheckBox) sender).Checked;
+
+            foreach (var c in V4Controls)
+                if (c.Key.StartsWith("che0"))
+                {
+                    var che = (CheckBox) c.Value;
+                    che.Checked = check;
+                }
+
+            foreach (var p in Mtr.Positions)
+            {
+                p.Checked = check;
+
+                // показывает и скрывает checks для частичной оплаты
+                if (check)
+                    JS.Write("var chprt = gi(\"chprt0{0}\"); chprt.style.display = \"inline\";", p.MtrOrder);
+                else
+                    JS.Write(
+                        "var chprt = gi(\"chprt0{0}\"); var prt = gi(\"prt0{0}\"); chprt.style.display = \"none\"; chprt.checked = 0; prt.style.display = \"none\";",
+                        p.MtrOrder);
+            }
+
+            // вариант ниже НЕ обновляет серверную модель
+            // JS.Write(@"var myList = document.getElementsByClassName('ToCheckAll'); 
+            //            for (i = 0; i < myList.length; i++) {{
+            //               var ch = myList[i].firstElementChild;
+            //               ch.checked = {0};
+            //            }}", check ? "true" :"false");
+        }
+
+        /// <summary>
+        ///     Снять выделения с CheckBox -ов выбора позиций
+        /// </summary>
+        private void ClearCheckControls()
+        {
+            foreach (var c in V4Controls)
+                if (c.Key.StartsWith("che0"))
+                {
+                    var che = (CheckBox) c.Value;
+                    che.Value = "0";
+                }
+        }
+
+        /// <summary>
+        ///     Общий обработчик события для чекбоксы выбора ссылок
+        /// </summary>
+        protected void CheckPosLink_Changed(object sender, ProperyChangedEventArgs e)
+        {
+            var che = (CheckBox) sender;
+            var pos = che.HtmlID.Replace("che0", "");
+            var posInt = pos.ToInt();
+
+            var position = Mtr.Positions.FirstOrDefault(i => i.MtrOrder == posInt);
+
+            if (position != null)
+                position.Checked = che.Checked;
+
+            // показывает и скрывает checks для частичной оплаты
+            if (che.Checked)
+                JS.Write("var chprt = gi(\"chprt0{0}\"); chprt.style.display = \"inline\";", posInt);
+            else
+                JS.Write(
+                    "var chprt = gi(\"chprt0{0}\"); var prt = gi(\"prt0{0}\"); chprt.style.display = \"none\"; chprt.checked = 0; prt.style.display = \"none\";",
+                    posInt);
+        }
+
+        #endregion
     }
 }

@@ -7,7 +7,7 @@
 // </автоматически создаваемое>
 //------------------------------------------------------------------------------
 
-namespace Kesco.App.Web.Docs.MTRclaim {
+namespace Kesco.App.Web.Docs.MTRСlaim {
     
     
     public partial class Default {
