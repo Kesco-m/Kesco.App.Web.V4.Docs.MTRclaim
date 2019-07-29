@@ -112,7 +112,7 @@
 
         .wd {
             vertical-align: top;
-            width: 100px;
+            width: 130px;
         }
 
         .dialogWd {
@@ -144,44 +144,42 @@
 <body>
 <%= RenderDocumentHeader() %>
 <br/>
-
-<div class="v4FormContainer">
-
-<div class="ctlMargMain">
-    <% RenderDocNumDateNameRows(Response.Output); %>
-</div>
 <!--наличие отсутствие руководителя-->
 <div id="headDivision" style="color: red; float: right; text-align: right;"></div>
+<div class="v4FormContainer">
 
+<div class="ctlMargMain" style="clear: both;">
+    <% RenderDocNumDateNameRows(Response.Output); %>
+</div>
+<div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain" style="display: block;">
     <div class="inl wd unselectable"><%= GetLocalizationFieldName(Mtr.Organization) %></div>
     <div class="inl al">
         <cc:DBSPerson ID="Company" runat="server" Width="334" IsCaller="True" Filter-PersonType="1" CallerType="Person" OnChanged="CompanyChanged" NextControl="Subdivision"></cc:DBSPerson>
     </div>
 </div>
-
+<div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain">
     <div class="inl wd"><%= GetLocalizationFieldName(Mtr.Subdivision) %></div>
     <div class="inl al">
         <cc:DBSSubdivision ID="Subdivision" runat="server" Width="334" OnChanged="SubdivisionChanged" NextControl="PerformerOfSubdivision"></cc:DBSSubdivision>
     </div>
 </div>
-
+<div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain">
     <div class="inl wd"><%= GetLocalizationFieldName(Mtr.PerformerOfSubdivision) %></div>
     <div class="inl al">
         <cc:DBSEmployee ID="PerformerOfSubdivision" runat="server" Width="334" IsCaller="True" CallerType="Employee" OnChanged="PerformerChanged" OnBeforeSearch="PerformerOfSubdivision_OnBeforeSearch" NextControl="DBSDocBasis"></cc:DBSEmployee>
     </div>
 </div>
-<br/>
+<div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain">
     <div class="inl wd"><%= GetLocalizationFieldName(Mtr.Basis) %></div>
     <div class="inl al">
         <cc:DBSDocument ID="DBSDocBasis" runat="server" Width="334" IsMultiSelect="True" IsRemove="True" ConfirmRemove="True" NextControl="txaDocDesc" OnChanged="DBSDocBasis_OnChanged" OnDeleted="DBSDocBasis_OnDeleted"></cc:DBSDocument>
     </div>
 </div>
-
-<br/>
+<div style="height: 3px;">&nbsp;</div>
 
 <%--Блок диалога--%>
 <div id="addEditDialog" onkeydown=" if (event.keyCode === 27) {HidePositionDlg();} " style="BACKGROUND-COLOR: white; border: 4px double black; display: none; position: absolute; width: 445px;">

@@ -9,6 +9,7 @@ using Kesco.Lib.BaseExtention.Enums.Controls;
 using Kesco.Lib.BaseExtention.Enums.Corporate;
 using Kesco.Lib.BaseExtention.Enums.Docs;
 using Kesco.Lib.DALC;
+using Kesco.Lib.Entities;
 using Kesco.Lib.Entities.Corporate;
 using Kesco.Lib.Entities.Documents;
 using Kesco.Lib.Entities.Documents.EF.MTR;
@@ -91,10 +92,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
         /// <summary>
         ///     Текущий типизированный документ
         /// </summary>
-        public MTRClaim Mtr
-        {
-            get { return (MTRClaim) Doc; }
-        }
+        public MTRClaim Mtr => (MTRClaim) Doc;
 
         private bool DocumentReadOnly
         {
@@ -155,7 +153,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
         ///     Инициализация конкретного документа
         /// </summary>
         /// <param name="copy">Параметр указывается если копируем документ</param>
-        protected override void DocumentInitialization(Document copy = null)
+        protected override void EntityInitialization(Entity copy = null)
         {
             if (copy == null)
                 Doc = new MTRClaim();
@@ -210,9 +208,9 @@ namespace Kesco.App.Web.Docs.MTRСlaim
         ///     Перегрузка метода загрузки данных по идентификатору
         /// </summary>
         /// <param name="id">Идентификатор</param>
-        protected override void LoadData(string id)
+        protected override void EntityLoadData(string id)
         {
-            base.LoadData(id);
+            base.EntityLoadData(id);
 
             if (!id.IsNullEmptyOrZero())
             {
@@ -245,9 +243,9 @@ namespace Kesco.App.Web.Docs.MTRСlaim
         /// <summary>
         ///     Обновляет поля специфичные для данного документа(без полной перезагрузки страницы)
         /// </summary>
-        protected override void RefreshCurrentDoc()
+        protected override void RefreshNotificationDocument()
         {
-            base.RefreshCurrentDoc();
+            base.RefreshNotificationDocument();
             RefreshPositions();
         }
 
@@ -290,7 +288,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
             JS.Write("gi('dlgHeaderText').innerText='{0}';", lblAddition);
 
             // добавление события нажатия на кнопку
-            JS.Write("gi('{0}').onclick={1};", btnAction.HtmlID, "function(){cmd('cmd','AddEditPosition');}");
+            JS.Write("gi('{0}').onclick={1};", btnAction.HtmlID, "function(){cmdasync('cmd','AddEditPosition');}");
 
             // Показать диалог
             JS.Write("ShowMtrDlg();");
@@ -344,7 +342,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
 
             // добавление события нажатия на кнопку
             JS.Write("gi('{0}').onclick={1};", btnDelete.HtmlID,
-                "function(){cmd('cmd','DeletePosition','mtrPos', '" + order + "');}");
+                "function(){cmdasync('cmd','DeletePosition','mtrPos', '" + order + "');}");
 
             // Показать диалог
             JS.Write("gi('DeleteDialog').style.display='block';");
@@ -481,6 +479,8 @@ namespace Kesco.App.Web.Docs.MTRСlaim
             {
                 newPos.CreateDeadlockSafety();
                 Mtr.Positions.Add(newPos);
+                RefreshPositions();
+                JS.Write("HidePositionDlg();");
             }
             else
             {
@@ -489,9 +489,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
                 if (!result)
                     Mtr.Positions.Remove(newPos);
             }
-
-            JS.Write("cmd('cmd','RefreshPositions');");
-            JS.Write("HidePositionDlg();");
+            
         }
 
         /// <summary>
@@ -516,7 +514,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
                 if (!Mtr.IsNew) pos.UpdateData();
             }
 
-            JS.Write("cmd('cmd','RefreshPositions');");
+            RefreshPositions();
             JS.Write("HidePositionDlg();");
         }
 
@@ -540,8 +538,8 @@ namespace Kesco.App.Web.Docs.MTRСlaim
                     Mtr.Positions[i].MtrOrder--;
             }
 
-            JS.Write("cmd('cmd','RefreshPositions');");
-            JS.Write("gi('DeleteDialog').style.display = 'none';");
+            RefreshPositions();
+            JS.Write("$('#DeleteDialog').hide();");
         }
 
         /// <summary>
@@ -581,10 +579,8 @@ namespace Kesco.App.Web.Docs.MTRСlaim
 
                 Mtr.Positions[index - 1].MtrOrder++;
 
-                JS.Write("cmd('cmd','RefreshPositions');");
+                RefreshPositions();
             }
-
-            RestoreCursor();
         }
 
         /// <summary>
@@ -620,10 +616,8 @@ namespace Kesco.App.Web.Docs.MTRСlaim
 
                 Mtr.Positions[index + 1].MtrOrder--;
 
-                JS.Write("cmd('cmd','RefreshPositions');");
+                RefreshPositions();
             }
-
-            RestoreCursor();
         }
 
 
@@ -830,7 +824,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
                             {
                                 w.Write(
                                     "<div><input title='передвинуть вверх' name='' type='image'src='/styles/ScrollUpEnabled.gif' style='cursor:hand' ");
-                                w.Write("onclick=\"Wait.render(true); cmdasync('cmd','UpPosition','mtrPos', '" +
+                                w.Write("onclick=\"cmdasync('cmd','UpPosition','mtrPos', '" +
                                         pos.MtrOrder + "');\"/></div>");
                             }
 
@@ -838,7 +832,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
                             {
                                 w.Write(
                                     "<div><input title='передвинуть вниз' name='' type='image' src='/styles/ScrollDownEnabled.gif' style='cursor:hand' ");
-                                w.Write("onclick=\"Wait.render(true); cmdasync('cmd','DownPosition','mtrPos', '" +
+                                w.Write("onclick=\"cmdasync('cmd','DownPosition','mtrPos', '" +
                                         pos.MtrOrder + "');\"/></div>");
                             }
 
@@ -1609,7 +1603,7 @@ WHERE связи.КодДокументаОснования = {0} AND связи
                 // если в списке подписей нет подписи руководителя, 
                 // s.SignId > 0 - строка "составил:" не считается, проверять только подписи 
                 else if (Doc.DocSigns == null || !Doc.DocSigns.Exists(s =>
-                             s.SignId > 0 && (s.EmployeeId == emplId || s.EmployeeInsteadOf == emplId)))
+                             s.SignId > 0 && (s.EmployeeId == emplId || s.EmployeeInsteadOfId == emplId)))
                 {
                     var userEditUrl = Config.user_form;
                     var headerEmpl = new Employee(emplId.ToString());
@@ -1700,12 +1694,12 @@ WHERE связи.КодДокументаОснования = {0} AND связи
             {
                 var value = e.NewValue.ToInt();
 
-                if (Mtr.BaseDocs.Exists(i => i.BaseDocId == value))
+                if (Mtr.BaseDocsLinks.Exists(i => i.BaseDocId == value))
                     return;
 
                 var link = new DocLink {BaseDocId = value, SequelDocId = Doc.DocId, DocFieldId = Mtr.Basis.DocFieldId};
 
-                Mtr.BaseDocs.Add(link);
+                Mtr.BaseDocsLinks.Add(link);
             }
         }
 
@@ -1716,14 +1710,14 @@ WHERE связи.КодДокументаОснования = {0} AND связи
         {
             if (!e.DelValue.IsNullEmptyOrZero())
             {
-                var index = Mtr.BaseDocs.FindIndex(i => i.BaseDocId == e.DelValue.ToInt());
+                var index = Mtr.BaseDocsLinks.FindIndex(i => i.BaseDocId == e.DelValue.ToInt());
                 if (index != -1)
                 {
-                    var link = Mtr.BaseDocs[index];
+                    var link = Mtr.BaseDocsLinks[index];
                     if (link.DocLinkId > 0)
                         link.Delete();
 
-                    Mtr.BaseDocs.RemoveAt(index);
+                    Mtr.BaseDocsLinks.RemoveAt(index);
                 }
             }
         }
