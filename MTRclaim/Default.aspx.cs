@@ -159,21 +159,42 @@ namespace Kesco.App.Web.Docs.MTRСlaim
                 Doc = new MTRClaim();
             else
                 Doc = (MTRClaim) copy;
-
-            Doc.Date = DateTime.Today;
+            
             ShowDocDate = false;
+
+            FieldsToControlsMapping = new Dictionary<V4Control, DocField>
+            {
+                {Company, Mtr.OrganizationField},
+                {Subdivision, Mtr.SubdivisionField},
+                {PerformerOfSubdivision, Mtr.PerformerOfSubdivisionField}
+            };
         }
+
+        /// <summary>
+        ///     Копирование данных документа на контролы.
+        ///     Этот метод может оставатся пустым, если нет необходимости в копировании документа
+        /// </summary>
+        protected override void DocumentToControls()
+        {
+            base.DocumentToControls();
+
+            if (!Mtr.IsNew) return;
+            Doc.Date = DateTime.Today;
+        }
+
 
         /// <summary>
         ///     Установить параметры контролов: параметры, дефолтные значения и т.д.
         /// </summary>
         protected override void SetControlProperties()
         {
-            Company.IsRequired = Mtr.Organization.IsRequired;
-            Subdivision.IsRequired = Mtr.Subdivision.IsRequired;
-            PerformerOfSubdivision.IsRequired = Mtr.PerformerOfSubdivision.IsRequired;
+            Company.IsRequired = Mtr.OrganizationField.IsRequired;
+            Subdivision.IsRequired = Mtr.SubdivisionField.IsRequired;
+            PerformerOfSubdivision.IsRequired = Mtr.PerformerOfSubdivisionField.IsRequired;
 
-            DBSDocBasis.Filter.Type.DocTypeParams.AddRange(GetControlTypeFilter(Mtr.Basis.DocFieldId));
+            DBSDocBasis.Filter.PersonIDs.Value = Mtr.OrganizationField.ValueString;
+            DBSDocBasis.Filter.Type.DocTypeParams.AddRange(GetControlTypeFilter(Mtr.BasisField.DocFieldId));
+            DBSDocBasis.SelectedItems.AddRange(Mtr.GetDocLinksItems(Mtr.BasisField.DocFieldId));
             DBSDocBasis.ConfirmRemoveMsg = Resx.GetString("msgOsnAttention7");
 
             // счета
@@ -195,7 +216,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
                 DBSDocToLink.Filter.Date.Value = Mtr.Date.ToSqlDate();
                 DBSDocToLink.Filter.Date.DateSearchType = DateSearchType.MoreThan;
             }
-
+           
             SetHeadDivisionText();
 
             if (IsInDocView)
@@ -249,20 +270,7 @@ namespace Kesco.App.Web.Docs.MTRСlaim
             RefreshPositions();
         }
 
-        /// <summary>
-        ///     Копирование данных документа на контролы.
-        ///     Этот метод может оставатся пустым, если нет необходимости в копировании документа
-        /// </summary>
-        protected override void DocumentToControls()
-        {
-            Company.Value = Mtr.Organization.ValueString;
-            Subdivision.Value = Mtr.Subdivision.ValueString;
-            PerformerOfSubdivision.Value = Mtr.PerformerOfSubdivision.ValueString;
-            DBSDocBasis.Filter.PersonIDs.Value = Mtr.Organization.ValueString;
-
-            DBSDocBasis.SelectedItems.AddRange(Mtr.GetDocLinksItems(Mtr.Basis.DocFieldId));
-        }
-
+       
         /// <summary>
         ///     Проверка корректности вводимых полей
         /// </summary>
@@ -1457,13 +1465,13 @@ WHERE связи.КодДокументаОснования = {0} AND связи
                     DBSDocBasis.Filter.PersonIDs.Value = CurrentPerson;
 
                     var personId = CurrentPerson.ToInt();
-                    Mtr.Organization.Value = personId;
+                    Mtr.OrganizationField.Value = personId;
 
                     if (CurrentUser.OrganizationId == personId)
                     {
-                        Mtr.Subdivision.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
+                        Mtr.SubdivisionField.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
                         PerformerOfSubdivision.Value = CurrentUser.Id;
-                        Mtr.PerformerOfSubdivision.Value = CurrentUser.EmployeeId;
+                        Mtr.PerformerOfSubdivisionField.Value = CurrentUser.EmployeeId;
 
                         SetHeadDivisionText();
                     }
@@ -1472,10 +1480,10 @@ WHERE связи.КодДокументаОснования = {0} AND связи
                 {
                     Subdivision.Filter.PcId.Value = Company.Value = CurrentUser.OrganizationId.ToString();
                     DBSDocBasis.Filter.PersonIDs.Value = CurrentUser.OrganizationId.ToString();
-                    Mtr.Organization.Value = CurrentUser.OrganizationId;
-                    Mtr.Subdivision.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
+                    Mtr.OrganizationField.Value = CurrentUser.OrganizationId;
+                    Mtr.SubdivisionField.Value = Subdivision.Value = Employee.GetUserDivision(CurrentUser.EmployeeId);
                     PerformerOfSubdivision.Value = CurrentUser.Id;
-                    Mtr.PerformerOfSubdivision.Value = CurrentUser.EmployeeId;
+                    Mtr.PerformerOfSubdivisionField.Value = CurrentUser.EmployeeId;
 
                     SetHeadDivisionText();
                 }
@@ -1590,8 +1598,8 @@ WHERE связи.КодДокументаОснования = {0} AND связи
         private void SetHeadDivisionText()
         {
             var inscription = string.Empty;
-            var subDivision = Mtr.Subdivision.ValueString;
-            var orgId = Mtr.Organization.ValueInt;
+            var subDivision = Mtr.SubdivisionField.ValueString;
+            var orgId = Mtr.OrganizationField.ValueInt;
             if (!string.IsNullOrEmpty(subDivision) && orgId > 0)
             {
                 var emplId = MTRClaim.GetHeadDivision(orgId, subDivision);
@@ -1631,15 +1639,15 @@ WHERE связи.КодДокументаОснования = {0} AND связи
             Subdivision.Filter.PcId.Value = selCompany;
             Subdivision.Filter.PcId.CompanyHowSearch = "0";
             DBSDocBasis.Filter.PersonIDs.Value = selCompany;
-            Mtr.Organization.Value = selCompany.ToInt();
+            Mtr.OrganizationField.Value = selCompany.ToInt();
 
             if (e.OldValue != e.NewValue)
             {
                 Subdivision.Value = string.Empty;
-                Mtr.Subdivision.Value = string.Empty;
+                Mtr.SubdivisionField.Value = string.Empty;
 
                 PerformerOfSubdivision.Value = string.Empty;
-                Mtr.PerformerOfSubdivision.Value = 0;
+                Mtr.PerformerOfSubdivisionField.Value = 0;
             }
         }
 
@@ -1652,12 +1660,12 @@ WHERE связи.КодДокументаОснования = {0} AND связи
             PerformerOfSubdivision.Filter.SubdivisionIDs.Value = select.SelectedItemsString;
             PerformerOfSubdivision.Filter.SubdivisionIDs.SubdivisionHowSearch = select.ValueSelectEnum;
             PerformerOfSubdivision.Filter.IdsCompany.CompanyHowSearch = "0";
-            Mtr.Subdivision.Value = select.Value;
+            Mtr.SubdivisionField.Value = select.Value;
 
             if (e.OldValue != e.NewValue)
             {
                 PerformerOfSubdivision.Value = string.Empty;
-                Mtr.PerformerOfSubdivision.Value = 0;
+                Mtr.PerformerOfSubdivisionField.Value = 0;
             }
 
             SetHeadDivisionText();
@@ -1669,7 +1677,7 @@ WHERE связи.КодДокументаОснования = {0} AND связи
         protected void PerformerChanged(object sender, ProperyChangedEventArgs e)
         {
             var curSender = (Select) sender;
-            Mtr.PerformerOfSubdivision.Value = curSender.Value.ToInt();
+            Mtr.PerformerOfSubdivisionField.Value = curSender.Value.ToInt();
         }
 
         /// <summary>
@@ -1697,7 +1705,7 @@ WHERE связи.КодДокументаОснования = {0} AND связи
                 if (Mtr.BaseDocsLinks.Exists(i => i.BaseDocId == value))
                     return;
 
-                var link = new DocLink {BaseDocId = value, SequelDocId = Doc.DocId, DocFieldId = Mtr.Basis.DocFieldId};
+                var link = new DocLink {BaseDocId = value, SequelDocId = Doc.DocId, DocFieldId = Mtr.BasisField.DocFieldId};
 
                 Mtr.BaseDocsLinks.Add(link);
             }

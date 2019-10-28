@@ -153,28 +153,28 @@
 </div>
 <div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain" style="display: block;">
-    <div class="inl wd unselectable"><%= GetLocalizationFieldName(Mtr.Organization) %></div>
+    <div class="inl wd unselectable"><%= GetLocalizationFieldName(Mtr.OrganizationField) %></div>
     <div class="inl al">
         <cc:DBSPerson ID="Company" runat="server" Width="334" IsCaller="True" Filter-PersonType="1" CallerType="Person" OnChanged="CompanyChanged" NextControl="Subdivision"></cc:DBSPerson>
     </div>
 </div>
 <div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain">
-    <div class="inl wd"><%= GetLocalizationFieldName(Mtr.Subdivision) %></div>
+    <div class="inl wd"><%= GetLocalizationFieldName(Mtr.SubdivisionField) %></div>
     <div class="inl al">
         <cc:DBSSubdivision ID="Subdivision" runat="server" Width="334" OnChanged="SubdivisionChanged" NextControl="PerformerOfSubdivision"></cc:DBSSubdivision>
     </div>
 </div>
 <div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain">
-    <div class="inl wd"><%= GetLocalizationFieldName(Mtr.PerformerOfSubdivision) %></div>
+    <div class="inl wd"><%= GetLocalizationFieldName(Mtr.PerformerOfSubdivisionField) %></div>
     <div class="inl al">
         <cc:DBSEmployee ID="PerformerOfSubdivision" runat="server" Width="334" IsCaller="True" CallerType="Employee" OnChanged="PerformerChanged" OnBeforeSearch="PerformerOfSubdivision_OnBeforeSearch" NextControl="DBSDocBasis"></cc:DBSEmployee>
     </div>
 </div>
 <div style="height: 3px;">&nbsp;</div>
 <div class="ctlMargMain">
-    <div class="inl wd"><%= GetLocalizationFieldName(Mtr.Basis) %></div>
+    <div class="inl wd"><%= GetLocalizationFieldName(Mtr.BasisField) %></div>
     <div class="inl al">
         <cc:DBSDocument ID="DBSDocBasis" runat="server" Width="334" IsMultiSelect="True" IsRemove="True" ConfirmRemove="True" NextControl="txaDocDesc" OnChanged="DBSDocBasis_OnChanged" OnDeleted="DBSDocBasis_OnDeleted"></cc:DBSDocument>
     </div>
@@ -318,7 +318,7 @@
 
 
 <div>
-    <div><%= GetLocalizationFieldName(Mtr.RequestItems) %></div>
+    <div><%= GetLocalizationFieldName(Mtr.RequestItemsField) %></div>
     <div id="divPositions"><% RenderPositions(Response.Output); %></div>
 </div>
 
